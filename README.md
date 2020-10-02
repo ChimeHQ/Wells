@@ -15,7 +15,7 @@ dependencies: [
 
 ### Namesake
 
-Wells is also about reporting, so it seemed logical to name it after a [notable journalist](https://en.wikipedia.org/wiki/Ida_B._Wells).
+Wells is all about reporting, so it seemed logical to name it after a [notable journalist](https://en.wikipedia.org/wiki/Ida_B._Wells).
 
 ### Suggestions or Feedback
 
