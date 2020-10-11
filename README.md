@@ -36,15 +36,17 @@ class MyDiagnosticReporter {
 
         for url in logURLs {
             let logIdentifier = computeUniqueIdentifier(for: url)
+            let request = makeURLRequest()
 
-            try reporter.submit(url: url, identifier: logIdentifier)
+            try reporter.submit(fileURL: url, identifier: logIdentifier, uploadRequest: request)
         }
 
         // or, just submit bytes
         let dataList = getExistingData()
 
         for data in dataList {
-            reporter.submit(data)
+            let request = makeURLRequest()
+            reporter.submit(data, uploadRequest: request)
         }
 
     }
@@ -63,10 +65,10 @@ class MyDiagnosticReporter {
     func getExistingData() -> [Data] {
         return []
     }
-}
 
-extension MyDiagnosticReporter: WellsReporterDelegate {
-    func makeURLRequest(for reporter: WellsReporter, fileURL: URL) -> URLRequest? {
+    func makeURLRequest() -> URLRequest {
+        // You have control over the URLRequest that Wells uses. However,
+        // some additional metadata will be added to enablee cross-launch tracking.
         let endpoint = URL(string: "https://mydiagnosticservice.com")!
 
         var request = URLRequest(url: endpoint)
@@ -75,11 +77,6 @@ extension MyDiagnosticReporter: WellsReporterDelegate {
         request.addValue("hiya", forHTTPHeaderField: "custom-header")
 
         return request
-    }
-
-    func makeFileURL(for reporter: WellsReporter, identifier: String) -> URL? {
-        // return nil to use the default Wells file url management
-        return nil
     }
 }
 ```

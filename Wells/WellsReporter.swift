@@ -8,13 +8,8 @@
 import Foundation
 import os.log
 
-public protocol WellsReporterDelegate: AnyObject {
-    func makeURLRequest(for reporter: WellsReporter, fileURL: URL) -> URLRequest?
-    func makeFileURL(for reporter: WellsReporter, identifier: String) -> URL?
-}
-
 public enum ReporterError: Error {
-    case noRequest
+    case failedToCreateURL
 }
 
 public class WellsReporter {
@@ -22,15 +17,16 @@ public class WellsReporter {
     private static let identifierHeader = "Wells-Upload-Identifier"
     public static let uploadFileExtension = "wellsdata"
 
-    public weak var delegate: WellsReporterDelegate?
     public let baseURL: URL
     private let uploader: WellsUploader
     private let logger: OSLog
+    public var locationProvider: ReportLocationProvider
 
     public init(baseURL: URL = defaultDirectory, backgroundIdentifier: String = WellsUploader.defaultBackgroundIdentifier) {
         self.logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
         self.baseURL = baseURL
         self.uploader = WellsUploader(backgroundIdentifier: backgroundIdentifier)
+        self.locationProvider = DefaultReportLocationProvider(baseURL: baseURL)
 
         uploader.delegate = self
     }
@@ -39,13 +35,16 @@ public class WellsReporter {
         return baseURL.appendingPathComponent(identifier).appendingPathExtension(WellsReporter.uploadFileExtension)
     }
 
-    private func reportURL(for identifier: String) -> URL {
-        return delegate?.makeFileURL(for: self, identifier: identifier) ?? defaultURL(for: identifier)
+    private func reportURL(for identifier: String) -> URL? {
+        return locationProvider.reportURL(for: identifier)
     }
 
-    public func submit(_ data: Data) {
+    public func submit(_ data: Data, uploadRequest: URLRequest) throws {
         let identifier = UUID().uuidString
-        let fileURL = reportURL(for: identifier)
+
+        guard let fileURL = reportURL(for: identifier) else {
+            throw ReporterError.failedToCreateURL
+        }
 
         do {
             try createReportDirectoryIfNeeded()
@@ -57,7 +56,7 @@ public class WellsReporter {
         }
 
         do {
-            try submit(url: fileURL, identifier: identifier)
+            try submit(fileURL: fileURL, identifier: identifier, uploadRequest: uploadRequest)
         } catch {
             os_log("failed to begin submission process %{public}@", log: self.logger, type: .error, String(describing: error))
 
@@ -65,15 +64,13 @@ public class WellsReporter {
         }
     }
 
-    public func submit(url: URL, identifier: String) throws {
-        guard var request = delegate?.makeURLRequest(for: self, fileURL: url) else {
-            throw ReporterError.noRequest
-        }
+    public func submit(fileURL: URL, identifier: String, uploadRequest: URLRequest) throws {
+        var request = uploadRequest
 
         // embed our header for background tracking
         request.addValue(identifier, forHTTPHeaderField: WellsReporter.identifierHeader)
 
-        uploader.uploadFile(url, using: request)
+        uploader.uploadFile(fileURL, using: request)
     }
 
     private func createReportDirectoryIfNeeded() throws {
@@ -101,7 +98,11 @@ extension WellsReporter: WellsUploaderDelegate {
             os_log("Submitted report successfully: %{public}@", log: self.logger, type: .error, identifier)
         }
 
-        let fileURL = reportURL(for: identifier)
+        guard let fileURL = reportURL(for: identifier) else {
+            os_log("Failed to compute URL for %{public}@", log: self.logger, type: .error, identifier)
+
+            return
+        }
 
         removeFile(at: fileURL)
     }
