@@ -11,18 +11,16 @@ public protocol ReportLocationProvider {
     func reportURL(for identifier: String) -> URL?
 }
 
-struct DefaultReportLocationProvider: ReportLocationProvider {
-    public static let uploadFileExtension = "wellsdata"
+public struct IdentifierExtensionLocationProvider: ReportLocationProvider {
+    public var baseURL: URL
+    public var fileExtension: String
 
-    let baseURL: URL
-
-    init(baseURL: URL) {
+    public init(baseURL: URL, fileExtension: String) {
         self.baseURL = baseURL
+        self.fileExtension = fileExtension
     }
 
-    func reportURL(for identifier: String) -> URL? {
-        let fileExtension = DefaultReportLocationProvider.uploadFileExtension
-
+    public func reportURL(for identifier: String) -> URL? {
         return baseURL.appendingPathComponent(identifier).appendingPathExtension(fileExtension)
     }
 }

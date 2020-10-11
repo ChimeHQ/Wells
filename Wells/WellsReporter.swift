@@ -26,7 +26,8 @@ public class WellsReporter {
         self.logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
         self.baseURL = baseURL
         self.uploader = WellsUploader(backgroundIdentifier: backgroundIdentifier)
-        self.locationProvider = DefaultReportLocationProvider(baseURL: baseURL)
+        self.locationProvider = IdentifierExtensionLocationProvider(baseURL: baseURL,
+                                                                    fileExtension: WellsReporter.uploadFileExtension)
 
         uploader.delegate = self
     }
