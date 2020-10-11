@@ -1,5 +1,3 @@
-[![Github CI](https://github.com/ChimeHQ/Wells/workflows/CI/badge.svg)](https://github.com/ChimeHQ/Wells/actions)
-
 # Wells
 A lightweight diagnostics report submission system
 
@@ -13,11 +11,84 @@ dependencies: [
 ]
 ```
 
-### Namesake
+## Getting Started
+
+Wells is just a submission system, and tries not to make any assumptions about the source or contents of the reports it transmits. It contains two main components: `WellsReporter` and `WellsUploader`. By default, these work together. But, `WellsUploader` can be used seperately if you need more control over the process.
+
+Because of it's flexibility, Wells requires you to do a little more work to wire it up to your source of diagnostic data. Here's what an simple setup could look like. Keep in mind that Wells uploads data using NSURLSession background uploads. This means that the start and end of an upload may not occur during the same application launch.
+
+```swift
+import Foundation
+import Wells
+
+class MyDiagnosticReporter {
+    private let reporter: WellsReporter
+
+    init() {
+        self.reporter = WellsReporter()
+
+        reporter.delegate = self
+    }
+
+    func start() throws {
+        // submit files, including an identifier unique to each file
+        let logURLs = getExistingLogs()
+
+        for url in logURLs {
+            let logIdentifier = computeUniqueIdentifier(for: url)
+
+            try reporter.submit(url: url, identifier: logIdentifier)
+        }
+
+        // or, just submit bytes
+        let dataList = getExistingData()
+
+        for data in dataList {
+            reporter.submit(data)
+        }
+
+    }
+
+    func computeUniqueIdentifier(for url: URL) -> String {
+        // this works, but a more robust solution would be based on the content of the data. Note that
+        // the url itself *may not* be consistent from launch to launch.
+        return UUID().uuidString
+    }
+
+    // Finding logs/data is up to you
+    func getExistingLogs() -> [URL] {
+        return []
+    }
+
+    func getExistingData() -> [Data] {
+        return []
+    }
+}
+
+extension MyDiagnosticReporter: WellsReporterDelegate {
+    func makeURLRequest(for reporter: WellsReporter, fileURL: URL) -> URLRequest? {
+        let endpoint = URL(string: "https://mydiagnosticservice.com")!
+
+        var request = URLRequest(url: endpoint)
+
+        request.httpMethod = "PUT"
+        request.addValue("hiya", forHTTPHeaderField: "custom-header")
+
+        return request
+    }
+
+    func makeFileURL(for reporter: WellsReporter, identifier: String) -> URL? {
+        // return nil to use the default Wells file url management
+        return nil
+    }
+}
+```
+
+## Namesake
 
 Wells is all about reporting, so it seemed logical to name it after a [notable journalist](https://en.wikipedia.org/wiki/Ida_B._Wells).
 
-### Suggestions or Feedback
+## Suggestions or Feedback
 
 We'd love to hear from you! Get in touch via [twitter](https://twitter.com/chimehq), an issue, or a pull request.
 
