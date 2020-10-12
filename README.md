@@ -13,7 +13,7 @@ dependencies: [
 
 ## Getting Started
 
-Wells is just a submission system, and tries not to make any assumptions about the source or contents of the reports it transmits. It contains two main components: `WellsReporter` and `WellsUploader`. By default, these work together. But, `WellsUploader` can be used seperately if you need more control over the process.
+Wells is just a submission system, and tries not to make any assumptions about the source or contents of the reports it transmits. It contains two main components: `WellsReporter` and `WellsUploader`. By default, these work together. But, `WellsUploader` can be used separately if you need more control over the process.
 
 Because of it's flexibility, Wells requires you to do a little more work to wire it up to your source of diagnostic data. Here's what an simple setup could look like. Keep in mind that Wells uploads data using NSURLSession background uploads. This means that the start and end of an upload may not occur during the same application launch.
 
@@ -75,6 +75,47 @@ class MyDiagnosticReporter {
         request.addValue("hiya", forHTTPHeaderField: "custom-header")
 
         return request
+    }
+}
+```
+
+## Using With MetricKit
+
+Wells works great for submitting data gathered from MetricKit. Here's a simple example.
+
+```swift
+import Foundation
+import MetricKit
+import Wells
+
+class MetricKitOnlyReporter: NSObject {
+    private let reporter: WellsReporter
+    private let endpoint = URL(string: "https://mydiagnosticservice.com")!
+
+    override init() {
+        self.reporter = WellsReporter()
+
+        super.init()
+
+        MXMetricManager.shared.add(self)
+    }
+
+    private func submitData(_ data: Data) {
+        var request = URLRequest(url: endpoint)
+
+        request.httpMethod = "PUT"
+
+        // ok, yes, I have glossed over error handling
+        try? reporter.submit(data, uploadRequest: request)
+    }
+}
+
+extension MetricKitOnlyReporter: MXMetricManagerSubscriber {
+    func didReceive(_ payloads: [MXMetricPayload]) {
+    }
+
+    func didReceive(_ payloads: [MXDiagnosticPayload]) {
+        payloads.map({ $0.jsonRepresentation() }).forEach({ submitData($0) })
     }
 }
 ```
