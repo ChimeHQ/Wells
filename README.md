@@ -26,8 +26,6 @@ class MyDiagnosticReporter {
 
     init() {
         self.reporter = WellsReporter()
-
-        reporter.delegate = self
     }
 
     func start() throws {
