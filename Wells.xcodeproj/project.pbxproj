@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C964F5E325338FBE00E3519D /* ReportLocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C964F5E225338FBE00E3519D /* ReportLocationProvider.swift */; };
+		C99E00DC259CFC8500055E74 /* Data+compression.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99E00DB259CFC8500055E74 /* Data+compression.swift */; };
 		C9C4FE192527C7B900F167BF /* Wells.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9C4FE0F2527C7B800F167BF /* Wells.framework */; };
 		C9C4FE1E2527C7B900F167BF /* WellsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C9C4FE1D2527C7B900F167BF /* WellsTests.m */; };
 		C9C4FE202527C7B900F167BF /* Wells.h in Headers */ = {isa = PBXBuildFile; fileRef = C9C4FE122527C7B800F167BF /* Wells.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -29,6 +30,7 @@
 
 /* Begin PBXFileReference section */
 		C964F5E225338FBE00E3519D /* ReportLocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportLocationProvider.swift; sourceTree = "<group>"; };
+		C99E00DB259CFC8500055E74 /* Data+compression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+compression.swift"; sourceTree = "<group>"; };
 		C9C4FE0F2527C7B800F167BF /* Wells.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Wells.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9C4FE122527C7B800F167BF /* Wells.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Wells.h; sourceTree = "<group>"; };
 		C9C4FE132527C7B800F167BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 				C9C4FECD2530E1ED00F167BF /* FileManager+Helpers.swift */,
 				C9C4FED12530E20E00F167BF /* WellsReporter.swift */,
 				C964F5E225338FBE00E3519D /* ReportLocationProvider.swift */,
+				C99E00DB259CFC8500055E74 /* Data+compression.swift */,
 			);
 			path = Wells;
 			sourceTree = "<group>";
@@ -213,6 +216,7 @@
 				C964F5E325338FBE00E3519D /* ReportLocationProvider.swift in Sources */,
 				C9C4FED22530E20E00F167BF /* WellsReporter.swift in Sources */,
 				C9C4FECE2530E1ED00F167BF /* FileManager+Helpers.swift in Sources */,
+				C99E00DC259CFC8500055E74 /* Data+compression.swift in Sources */,
 				C9C4FE542527FA1E00F167BF /* WellsUploader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
