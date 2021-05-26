@@ -22,7 +22,7 @@ public class WellsUploader: NSObject {
     public weak var delegate: WellsUploaderDelegate?
 
     public static var defaultBackgroundIdentifier: String = {
-        let bundleId = Bundle.main.bundleIdentifier ?? "com.chimehq.Wells"
+        let bundleId = Bundle.main.bundleIdentifier ?? "io.stacksift.Wells"
 
         return bundleId + ".WellsUploader"
     }()
@@ -31,17 +31,21 @@ public class WellsUploader: NSObject {
         let config = URLSessionConfiguration.background(withIdentifier: backgroundIdentifier)
         config.isDiscretionary = true
 
+        if #available(macOS 11.0, *) {
+            config.sessionSendsLaunchEvents = false
+        }
+
         return URLSession(configuration: config, delegate: self, delegateQueue: self.queue)
     }()
 
     public init(backgroundIdentifier: String = defaultBackgroundIdentifier) {
         self.backgroundIdentifier = backgroundIdentifier
-        self.logger = OSLog(subsystem: "com.chimehq.Wells", category: "Uploader")
+        self.logger = OSLog(subsystem: "io.stacksift.Wells", category: "Uploader")
 
         self.queue = OperationQueue()
 
         queue.maxConcurrentOperationCount = 1
-        queue.name = "com.chimehq.Wells.Uploader"
+        queue.name = "io.stacksift.Wells.Uploader"
 
         super.init()
     }
