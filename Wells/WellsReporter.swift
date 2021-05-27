@@ -22,7 +22,7 @@ public class WellsReporter {
     private let logger: OSLog
     public var locationProvider: ReportLocationProvider
 
-    public init(baseURL: URL = defaultDirectory, backgroundIdentifier: String = WellsUploader.defaultBackgroundIdentifier) {
+    public init(baseURL: URL = defaultDirectory, backgroundIdentifier: String? = WellsUploader.defaultBackgroundIdentifier) {
         self.logger = OSLog(subsystem: "io.stacksift.Wells", category: "Reporter")
         self.baseURL = baseURL
         self.uploader = WellsUploader(backgroundIdentifier: backgroundIdentifier)
@@ -30,6 +30,10 @@ public class WellsReporter {
                                                                     fileExtension: WellsReporter.uploadFileExtension)
 
         uploader.delegate = self
+    }
+
+    public var usingBackgroundUploads: Bool {
+        return uploader.backgroundIdentifier != nil
     }
 
     private func defaultURL(for identifier: String) -> URL {

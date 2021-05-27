@@ -17,28 +17,39 @@ public class WellsUploader: NSObject {
     public typealias Identifier = String
     private let queue: OperationQueue
     private let logger: OSLog
-    public let backgroundIdentifier: String
+    public let backgroundIdentifier: String?
 
     public weak var delegate: WellsUploaderDelegate?
 
     public static var defaultBackgroundIdentifier: String = {
         let bundleId = Bundle.main.bundleIdentifier ?? "io.stacksift.Wells"
 
-        return bundleId + ".WellsUploader"
+        return bundleId + ".Uploader"
     }()
 
-    private lazy var session: URLSession = {
-        let config = URLSessionConfiguration.background(withIdentifier: backgroundIdentifier)
+    private lazy var sessionConfiguation: URLSessionConfiguration = {
+        guard let identifier = backgroundIdentifier else {
+            return URLSessionConfiguration.default
+        }
+
+        let config = URLSessionConfiguration.background(withIdentifier: identifier)
+
         config.isDiscretionary = true
 
         if #available(macOS 11.0, *) {
             config.sessionSendsLaunchEvents = false
         }
 
-        return URLSession(configuration: config, delegate: self, delegateQueue: self.queue)
+        return config
     }()
 
-    public init(backgroundIdentifier: String = defaultBackgroundIdentifier) {
+    private lazy var session: URLSession = {
+        let config = sessionConfiguation
+
+        return URLSession(configuration: config, delegate: self, delegateQueue: queue)
+    }()
+
+    public init(backgroundIdentifier: String? = defaultBackgroundIdentifier) {
         self.backgroundIdentifier = backgroundIdentifier
         self.logger = OSLog(subsystem: "io.stacksift.Wells", category: "Uploader")
 
