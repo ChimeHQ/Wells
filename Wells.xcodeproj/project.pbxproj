@@ -31,6 +31,7 @@
 /* Begin PBXFileReference section */
 		C964F5E225338FBE00E3519D /* ReportLocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportLocationProvider.swift; sourceTree = "<group>"; };
 		C99E00DB259CFC8500055E74 /* Data+compression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+compression.swift"; sourceTree = "<group>"; };
+		C9A522E82660060F0054C454 /* Wells.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Wells.xcconfig; sourceTree = "<group>"; };
 		C9C4FE0F2527C7B800F167BF /* Wells.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Wells.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9C4FE122527C7B800F167BF /* Wells.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Wells.h; sourceTree = "<group>"; };
 		C9C4FE132527C7B800F167BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -91,6 +92,7 @@
 				C9C4FED12530E20E00F167BF /* WellsReporter.swift */,
 				C964F5E225338FBE00E3519D /* ReportLocationProvider.swift */,
 				C99E00DB259CFC8500055E74 /* Data+compression.swift */,
+				C9A522E82660060F0054C454 /* Wells.xcconfig */,
 			);
 			path = Wells;
 			sourceTree = "<group>";
@@ -359,6 +361,7 @@
 		};
 		C9C4FE242527C7B900F167BF /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9A522E82660060F0054C454 /* Wells.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -379,6 +382,7 @@
 				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.stacksift.Wells;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = "";
 				SKIP_INSTALL = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -387,6 +391,7 @@
 		};
 		C9C4FE252527C7B900F167BF /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = C9A522E82660060F0054C454 /* Wells.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -407,6 +412,7 @@
 				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = io.stacksift.Wells;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = "";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};

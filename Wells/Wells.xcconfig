@@ -1,0 +1,18 @@
+//
+//  Wells.xcconfig
+//  Wells
+//
+//  Created by Matthew Massicotte on 2021-05-27.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+
+#include "xcconfigs/UniversalFramework_Framework.xcconfig"
+
+APPLICATION_EXTENSION_API_ONLY = YES
+
+MACOSX_DEPLOYMENT_TARGET = 10.12
+IPHONEOS_DEPLOYMENT_TARGET = 10.0
+TVOS_DEPLOYMENT_TARGET = 10.0
+WATCHOS_DEPLOYMENT_TARGET = 3.0
