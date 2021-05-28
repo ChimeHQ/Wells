@@ -24,3 +24,15 @@ public struct IdentifierExtensionLocationProvider: ReportLocationProvider {
         return baseURL.appendingPathComponent(identifier).appendingPathExtension(fileExtension)
     }
 }
+
+public struct FilenameIdentifierLocationProvider: ReportLocationProvider {
+    public var baseURL: URL
+
+    public init(baseURL: URL) {
+        self.baseURL = baseURL
+    }
+
+    public func reportURL(for identifier: String) -> URL? {
+        return baseURL.appendingPathComponent(identifier)
+    }
+}
