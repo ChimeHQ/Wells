@@ -17,6 +17,12 @@ Carthage:
 github "stacksift/Wells"
 ```
 
+CocoaPods:
+
+```
+pod 'Wells'
+```
+
 ## Getting Started
 
 Wells is just a submission system, and tries not to make any assumptions about the source or contents of the reports it transmits. It contains two main components: `WellsReporter` and `WellsUploader`. By default, these work together. But, `WellsUploader` can be used separately if you need more control over the process.
