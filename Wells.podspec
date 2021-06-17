@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'Wells'
-  s.version      = '0.1.3'
+  s.version      = '0.1.4'
   s.summary      = 'a lightweight diagnostics report submission system'
 
   s.homepage     = 'https://github.com/stacksift/Wells'
