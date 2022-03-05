@@ -10,8 +10,6 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
-        .target(name: "Wells", dependencies: [], path: "Wells/"),
-        .testTarget(name: "WellsTests", dependencies: ["Wells"], path: "WellsTests/"),
-    ],
-    swiftLanguageVersions: [.v5]
+        .target(name: "Wells", dependencies: []),
+    ]
 )

@@ -123,7 +123,7 @@ extension WellsReporter {
     }
 
     private static var bundleScopedCachesDirectory: URL? {
-        return FileManager.default.bundleIdScopedURL(for: .cachesDirectory)
+        return FileManager.default.bundleIdSubdirectoryURL(for: .cachesDirectory)
     }
 
     public static var defaultDirectory: URL {

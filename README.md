@@ -1,20 +1,15 @@
+[![License][license badge]][license]
+[![Platforms][platforms badge]][platforms]
+
 # Wells
 A lightweight diagnostics report submission system
 
 ## Integration
 
-Swift Package Manager:
-
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ChimeHQ/Wells.git")
+    .package(url: "https://github.com/ChimeHQ/Wells")
 ]
-```
-
-Carthage:
-
-```
-github "ChimeHQ/Wells"
 ```
 
 ## Getting Started
@@ -135,3 +130,8 @@ Wells is all about reporting, so it seemed logical to name it after a [notable j
 We'd love to hear from you! Get in touch via [twitter](https://twitter.com/ChimeHQ), an issue, or a pull request.
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+
+[license]: https://opensource.org/licenses/BSD-3-Clause
+[license badge]: https://img.shields.io/github/license/ChimeHQ/Wells
+[platforms]: https://swiftpackageindex.com/ChimeHQ/Wells
+[platforms badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FChimeHQ%2FWells%2Fbadge%3Ftype%3Dplatforms

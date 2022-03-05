@@ -8,24 +8,24 @@
 import Foundation
 
 extension FileManager {
-    func bundleIdScopedURL(for dir: FileManager.SearchPathDirectory, bundleId: String) -> URL? {
+    func subdirectoryURL(named name: String, in dir: FileManager.SearchPathDirectory) -> URL? {
         guard let url = FileManager.default.urls(for: dir, in: .userDomainMask).first else {
             return nil
         }
 
-        let scopedURL = url.appendingPathComponent(bundleId)
+        let scopedURL = url.appendingPathComponent(name)
 
         try? FileManager.default.createDirectory(at: scopedURL, withIntermediateDirectories: true, attributes: nil)
 
         return scopedURL
     }
 
-    func bundleIdScopedURL(for dir: FileManager.SearchPathDirectory) -> URL? {
+    func bundleIdSubdirectoryURL(for dir: FileManager.SearchPathDirectory) -> URL? {
         guard let bundleId = Bundle.main.bundleIdentifier else {
             return nil
         }
 
-        return bundleIdScopedURL(for: dir, bundleId: bundleId)
+        return subdirectoryURL(named: bundleId, in: dir)
     }
 }
 
