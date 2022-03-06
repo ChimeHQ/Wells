@@ -1,11 +1,5 @@
-//
-//  Data+compression.swift
-//  Wells
-//
-//  Created by Matt Massicotte on 2020-02-14.
-//
-
 import Foundation
+#if canImport(zlib)
 import zlib
 
 public extension Data {
@@ -30,3 +24,4 @@ public extension Data {
         }
     }
 }
+#endif

@@ -36,9 +36,12 @@ public class WellsUploader: NSObject {
 
         config.isDiscretionary = true
 
+        // this API was marked as unaviable in earlier SDK versions
+        #if compiler(>=5.3)
         if #available(macOS 11.0, *) {
             config.sessionSendsLaunchEvents = false
         }
+        #endif
 
         return config
     }()
