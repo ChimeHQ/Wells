@@ -23,7 +23,7 @@ public class WellsReporter {
     public var locationProvider: ReportLocationProvider
 
     public init(baseURL: URL = defaultDirectory, backgroundIdentifier: String? = WellsUploader.defaultBackgroundIdentifier) {
-        self.logger = OSLog(subsystem: "io.stacksift.Wells", category: "Reporter")
+        self.logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
         self.baseURL = baseURL
         self.uploader = WellsUploader(backgroundIdentifier: backgroundIdentifier)
         self.locationProvider = IdentifierExtensionLocationProvider(baseURL: baseURL,
@@ -129,6 +129,6 @@ extension WellsReporter {
     public static var defaultDirectory: URL {
         let baseURL = bundleScopedCachesDirectory ?? fallbackDirectory
 
-        return baseURL.appendingPathComponent("io.stacksift.Wells")
+        return baseURL.appendingPathComponent("com.chimehq.Wells")
     }
 }

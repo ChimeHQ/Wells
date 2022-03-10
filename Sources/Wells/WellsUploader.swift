@@ -1,10 +1,3 @@
-//
-//  WellsUploader.swift
-//  Wells
-//
-//  Created by Matt Massicotte on 2020-10-02.
-//
-
 import Foundation
 import os.log
 
@@ -22,7 +15,7 @@ public class WellsUploader: NSObject {
     public weak var delegate: WellsUploaderDelegate?
 
     public static var defaultBackgroundIdentifier: String = {
-        let bundleId = Bundle.main.bundleIdentifier ?? "io.stacksift.Wells"
+        let bundleId = Bundle.main.bundleIdentifier ?? "com.chimehq.Wells"
 
         return bundleId + ".Uploader"
     }()
@@ -54,12 +47,12 @@ public class WellsUploader: NSObject {
 
     public init(backgroundIdentifier: String? = defaultBackgroundIdentifier) {
         self.backgroundIdentifier = backgroundIdentifier
-        self.logger = OSLog(subsystem: "io.stacksift.Wells", category: "Uploader")
+        self.logger = OSLog(subsystem: "com.chimehq.Wells", category: "Uploader")
 
         self.queue = OperationQueue()
 
         queue.maxConcurrentOperationCount = 1
-        queue.name = "io.stacksift.Wells.Uploader"
+        queue.name = "com.chimehq.Wells.Uploader"
 
         super.init()
     }
