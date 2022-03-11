@@ -18,6 +18,8 @@ Wells is just a submission system, and tries not to make any assumptions about t
 
 Because of it's flexibility, Wells requires you to do a little more work to wire it up to your source of diagnostic data. Here's what an simple setup could look like. Keep in mind that Wells uploads data using NSURLSession background uploads. This means that the start and end of an upload may not occur during the same application launch.
 
+If you use `WellsReporter` to submit data, it will manage the cross-launch details itself. But, if you need more control, or want to manage the on-disk files yourself, you'll need to provide it with a `ReportLocationProvider` that can map identifiers back to file URLs.
+
 ```swift
 import Foundation
 import Wells
