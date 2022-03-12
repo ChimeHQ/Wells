@@ -2,7 +2,7 @@
 [![Platforms][platforms badge]][platforms]
 
 # Wells
-A lightweight diagnostics report submission system
+A lightweight diagnostics report submission system. 
 
 ## Integration
 
@@ -29,6 +29,12 @@ class MyDiagnosticReporter {
 
     init() {
         self.reporter = WellsReporter()
+        
+        reporter.existingLogHandler = { url, date in
+            // might want to examine date to see how old
+            // the date is (and handle errors more gracefully)
+            try? submit(url: url)
+        }
     }
 
     func start() throws {
@@ -36,10 +42,7 @@ class MyDiagnosticReporter {
         let logURLs = getExistingLogs()
 
         for url in logURLs {
-            let logIdentifier = computeUniqueIdentifier(for: url)
-            let request = makeURLRequest()
-
-            try reporter.submit(fileURL: url, identifier: logIdentifier, uploadRequest: request)
+            try submit(url: url)
         }
 
         // or, just submit bytes
@@ -50,6 +53,13 @@ class MyDiagnosticReporter {
             reporter.submit(data, uploadRequest: request)
         }
 
+    }
+
+    func submit(url: URL) throws {
+        let logIdentifier = computeUniqueIdentifier(for: url)
+        let request = makeURLRequest()
+
+        try reporter.submit(fileURL: url, identifier: logIdentifier, uploadRequest: request)
     }
 
     func computeUniqueIdentifier(for url: URL) -> String {
@@ -82,9 +92,19 @@ class MyDiagnosticReporter {
 }
 ```
 
+## Retries
+
+Because that Wells manages submissions *across* app launches, retry logic can be complex. Wells will do its best to retry unsuccesful submissions. It respects the `Retry-After` HTTP header and has backoff. But, it is possible that the hosting app is terminated while a backoff delay is pending. In this situation, `WellsReporter` relies on its `existingLogHandler` property to avoid needing persistent storage.
+
+By default, if there are files found within the `baseURL` directory that are older than 2 days, Wells will give up and delete them.
+
+Bottom line: Wells submissions are best effort. Robust retry support means you have to make use of `existingLogHandler`. There are pathological, if improbable situations that could prevent the submission and retry system from working in a predictable way.
+
 ## Using With MetricKit
 
-Wells works great for submitting data gathered from MetricKit. Here's a simple example.
+Wells works great for submitting data gathered from MetricKit. In fact, [MeterReporter](https://github.com/ChimeHQ/MeterReporter) uses it for a full MetricKit-based reporting system.
+
+But, you can also do it yourself. Here's a simple example.
 
 ```swift
 import Foundation

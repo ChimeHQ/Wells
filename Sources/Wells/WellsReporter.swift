@@ -1,10 +1,3 @@
-//
-//  WellsReporter.swift
-//  Wells
-//
-//  Created by Matt Massicotte on 2020-10-09.
-//
-
 import Foundation
 import os.log
 
@@ -14,8 +7,12 @@ public enum ReporterError: Error {
 
 public class WellsReporter {
     public static let shared = WellsReporter()
-    private static let identifierHeader = "Wells-Upload-Identifier"
     public static let uploadFileExtension = "wellsdata"
+    private static let maximumAccountCount = 5
+    private static let maximumLogAge: TimeInterval = 2.0 * 24.0 * 60.0 * 60.0
+    public lazy var existingLogHandler: (URL, Date) -> Void = { url, date in
+        self.handleExistingLog(at: url, date: date)
+    }
 
     public let baseURL: URL
     private let uploader: WellsUploader
@@ -30,6 +27,10 @@ public class WellsReporter {
                                                                     fileExtension: WellsReporter.uploadFileExtension)
 
         uploader.delegate = self
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(10), qos: .background) {
+            self.handleExistingLogs()
+        }
     }
 
     public var usingBackgroundUploads: Bool {
@@ -51,39 +52,44 @@ public class WellsReporter {
             throw ReporterError.failedToCreateURL
         }
 
-        do {
-            try createReportDirectoryIfNeeded()
-            try data.write(to: fileURL)
-        } catch {
-            os_log("failed to write out data", log: self.logger, type: .error, String(describing: error))
+        try createReportDirectoryIfNeeded()
 
-            return
-        }
+        try data.write(to: fileURL)
 
-        do {
-            try submit(fileURL: fileURL, identifier: identifier, uploadRequest: uploadRequest)
-        } catch {
-            os_log("failed to begin submission process %{public}@", log: self.logger, type: .error, String(describing: error))
-
-            removeFile(at: fileURL)
-        }
+        submit(fileURL: fileURL, identifier: identifier, uploadRequest: uploadRequest)
     }
 
-    public func submit(fileURL: URL, identifier: String, uploadRequest: URLRequest) throws {
+    public func submit(fileURL: URL, identifier: String, uploadRequest: URLRequest) {
         var request = uploadRequest
 
         // embed our header for background tracking
-        request.addValue(identifier, forHTTPHeaderField: WellsReporter.identifierHeader)
+        request.uploadIdentifier = identifier
 
         uploader.uploadFile(fileURL, using: request)
     }
 
-    private func createReportDirectoryIfNeeded() throws {
+    public func createReportDirectoryIfNeeded() throws {
         if FileManager.default.directoryExists(at: baseURL) {
             return
         }
 
         try FileManager.default.createDirectory(at: baseURL, withIntermediateDirectories: true, attributes: nil)
+    }
+
+    func handleExistingLogs() {
+        let urls = try? FileManager.default.contentsOfDirectory(at: baseURL,
+                                                                includingPropertiesForKeys: [.creationDateKey])
+
+        guard let urls = urls else {
+            return
+        }
+
+        for url in urls {
+            let values = try? url.resourceValues(forKeys: [.creationDateKey])
+            let date = values?.creationDate ?? Date.distantPast
+
+            self.existingLogHandler(url, date)
+        }
     }
 
     private func removeFile(at url: URL) {
@@ -93,16 +99,8 @@ public class WellsReporter {
             os_log("failed to remove log at %{public}@ %{public}@", log: self.logger, type: .error, url.path, String(describing: error))
         }
     }
-}
 
-extension WellsReporter: WellsUploaderDelegate {
-    public func finishedUpload(of identifier: WellsUploader.Identifier, with error: Error?, by uploader: WellsUploader) {
-        if let e = error {
-            os_log("Failed to submit report: %{public}@ - %{public}@", log: self.logger, type: .error, identifier, String(describing: e))
-        } else {
-            os_log("Submitted report successfully: %{public}@", log: self.logger, type: .error, identifier)
-        }
-
+    private func removeFile(with identifier: WellsUploader.Identifier) {
         guard let fileURL = reportURL(for: identifier) else {
             os_log("Failed to compute URL for %{public}@", log: self.logger, type: .error, identifier)
 
@@ -112,8 +110,64 @@ extension WellsReporter: WellsUploaderDelegate {
         removeFile(at: fileURL)
     }
 
+    private func retrySubmission(of identifier: WellsUploader.Identifier, after interval: TimeInterval, with request: URLRequest) {
+        guard let fileURL = reportURL(for: identifier) else {
+            os_log("Failed to compute URL for %{public}@", log: logger, type: .error, identifier)
+
+            return
+        }
+
+        let count = request.attemptCount
+
+        if count >= WellsReporter.maximumAccountCount {
+            os_log("Exceeded maximum retry count for %{public}@", log: logger, type: .error, identifier)
+
+            removeFile(at: fileURL)
+
+            return
+        }
+
+        let delay = Int(max(interval, 60.0))
+
+        os_log("Retrying submission after %{public}d %{public}@", log: logger, type: .info, delay, identifier)
+
+        var newRequest = request
+
+        newRequest.attemptCount = count + 1
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(delay), qos: .background) {
+            self.submit(fileURL: fileURL, identifier: identifier, uploadRequest: newRequest)
+        }
+    }
+
+    private func handleExistingLog(at url: URL, date: Date) {
+        let oldDate = Date().addingTimeInterval(-WellsReporter.maximumLogAge)
+
+        guard date < oldDate else { return }
+
+        os_log("removing old log %{public}@", log: logger, type: .info, url.path)
+        removeFile(at: url)
+    }
+}
+
+extension WellsReporter: WellsUploaderDelegate {
+    public func finishedUpload(of identifier: WellsUploader.Identifier, with error: NetworkResponseError?, by uploader: WellsUploader) {
+        switch error {
+        case .transientFailure(let interval, let request):
+            retrySubmission(of: identifier, after: interval, with: request)
+
+            return
+        case nil:
+            os_log("Submitted report successfully: %{public}@", log: self.logger, type: .error, identifier)
+        case let e?:
+            os_log("Failed to submit report: %{public}@ - %{public}@", log: self.logger, type: .error, identifier, String(describing: e))
+        }
+
+        removeFile(with: identifier)
+    }
+
     public func uploadIdentifier(for request: URLRequest, with uploader: WellsUploader) -> WellsUploader.Identifier? {
-        return request.allHTTPHeaderFields?[WellsReporter.identifierHeader]
+        return request.uploadIdentifier
     }
 }
 

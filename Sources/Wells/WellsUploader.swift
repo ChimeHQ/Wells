@@ -2,11 +2,13 @@ import Foundation
 import os.log
 
 public protocol WellsUploaderDelegate: AnyObject {
-    func finishedUpload(of identifier: WellsUploader.Identifier, with error: Error?, by uploader: WellsUploader)
+    func finishedUpload(of identifier: WellsUploader.Identifier, with error: NetworkResponseError?, by uploader: WellsUploader)
     func uploadIdentifier(for request: URLRequest, with uploader: WellsUploader) -> WellsUploader.Identifier?
 }
 
 public class WellsUploader: NSObject {
+    private static let defaultRetryInterval: TimeInterval = 1 * 60.0
+
     public typealias Identifier = String
     private let queue: OperationQueue
     private let logger: OSLog
@@ -109,8 +111,24 @@ public class WellsUploader: NSObject {
         task.resume()
     }
 
-    private func retryTask(_ task: URLSessionTask) {
-        os_log("upload retry not implemented", log: logger, type: .error)
+    private func retryInterval(for task: URLSessionTask) -> TimeInterval {
+        guard let response = task.response else {
+            return WellsUploader.defaultRetryInterval
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            return WellsUploader.defaultRetryInterval
+        }
+
+        if let retryAfter = httpResponse.retryAfterInterval {
+            return retryAfter
+        }
+
+        // This optional fallback shouldn't occur, but if it does
+        // make it large
+        let attempt = task.originalRequest?.attemptCount ?? 5
+
+        return TimeInterval(attempt + 1) * WellsUploader.defaultRetryInterval
     }
 }
 
@@ -133,9 +151,19 @@ extension WellsUploader: URLSessionTaskDelegate {
             case .failed(let e):
                 self.delegate?.finishedUpload(of: identifier, with: e, by: self)
             case .rejected:
-                self.delegate?.finishedUpload(of: identifier, with: NetworkResponseError.requestInvalid, by: self)
+                self.delegate?.finishedUpload(of: identifier, with: .requestInvalid, by: self)
             case .retry:
-                self.retryTask(task)
+                let networkError: NetworkResponseError
+
+                if let request = task.originalRequest {
+                    let interval = self.retryInterval(for: task)
+
+                    networkError = .transientFailure(interval, request)
+                } else {
+                    networkError = .missingOriginalRequest
+                }
+
+                self.delegate?.finishedUpload(of: identifier, with: networkError, by: self)
             }
         }
     }

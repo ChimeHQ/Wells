@@ -1,10 +1,3 @@
-//
-//  ReportLocationProvider.swift
-//  Wells
-//
-//  Created by Matt Massicotte on 2020-10-11.
-//
-
 import Foundation
 
 public protocol ReportLocationProvider {

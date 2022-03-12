@@ -1,14 +1,7 @@
-//
-//  NetworkResponse.swift
-//  Wells
-//
-//  Created by Matt Massicotte on 2020-10-02.
-//
-
 import Foundation
 
 public enum NetworkResponse {
-    case failed(Error)
+    case failed(NetworkResponseError)
     case rejected
     case retry
     case success(Int)
@@ -26,16 +19,19 @@ extension NetworkResponse: CustomStringConvertible {
 }
 
 public enum NetworkResponseError: Error {
+    case protocolError(Error)
     case noResponseOrError
     case noHTTPResponse
     case httpReponseInvalid
     case requestInvalid
+    case missingOriginalRequest
+    case transientFailure(TimeInterval, URLRequest)
 }
 
 public extension NetworkResponse {
     init(response: URLResponse?, error: Error? = nil) {
         if let e = error {
-            self = NetworkResponse.failed(e)
+            self = NetworkResponse.failed(NetworkResponseError.protocolError(e))
             return
         }
 
