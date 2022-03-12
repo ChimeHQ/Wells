@@ -95,7 +95,7 @@ public class WellsUploader: NSObject {
     }
 
     private func beginUploadTask(with fileURL: URL, identifier: Identifier, using request: URLRequest) {
-        os_log("Submitting %{pubilc}@: %{public}@", log: logger, type: .info, identifier, fileURL.path)
+        os_log("Submitting %{public}@: %{public}@", log: logger, type: .info, identifier, fileURL.path)
 
         if FileManager.default.isReadableFile(atPath: fileURL.path) == false {
             os_log("unable to read file at path %{public}@", log: logger, type: .error, fileURL.path)
