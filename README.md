@@ -1,5 +1,9 @@
-[![License][license badge]][license]
+<div align="center">
+
 [![Platforms][platforms badge]][platforms]
+[![Discord][discord badge]][discord]
+
+</div>
 
 # Wells
 A lightweight diagnostics report submission system. 
@@ -16,7 +20,7 @@ dependencies: [
 
 Wells is just a submission system, and tries not to make any assumptions about the source or contents of the reports it transmits. It contains two main components: `WellsReporter` and `WellsUploader`. By default, these work together. But, `WellsUploader` can be used separately if you need more control over the process.
 
-Because of it's flexibility, Wells requires you to do a little more work to wire it up to your source of diagnostic data. Here's what an simple setup could look like. Keep in mind that Wells uploads data using NSURLSession background uploads. This means that the start and end of an upload may not occur during the same application launch.
+Because of its flexibility, Wells requires you to do a little more work to wire it up to your source of diagnostic data. Here's what an simple setup could look like. Keep in mind that Wells uploads data using `NSURLSession` background uploads. This means that the start and end of an upload may not occur during the same application launch.
 
 If you use `WellsReporter` to submit data, it will manage the cross-launch details itself. But, if you need more control, or want to manage the on-disk files yourself, you'll need to provide it with a `ReportLocationProvider` that can map identifiers back to file URLs.
 
@@ -149,11 +153,15 @@ Wells is all about reporting, so it seemed logical to name it after a [notable j
 
 ## Suggestions or Feedback
 
-We'd love to hear from you! Get in touch via an issue or pull request.
+I would love to hear from you! Issues or pull requests work great. A [Discord server][discord] is also available for live help, but I have a strong bias towards answering in the form of documentation.
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+I prefer collaboration, and would love to find ways to work together if you have a similar project.
 
-[license]: https://opensource.org/licenses/BSD-3-Clause
-[license badge]: https://img.shields.io/github/license/ChimeHQ/Wells
+I prefer indentation with tabs for improved accessibility. But, I'd rather you use the system you want and make a PR than hesitate because of whitespace.
+
+By participating in this project you agree to abide by the [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
+
 [platforms]: https://swiftpackageindex.com/ChimeHQ/Wells
 [platforms badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FChimeHQ%2FWells%2Fbadge%3Ftype%3Dplatforms
+[discord]: https://discord.gg/esFpX6sErJ
+[discord badge]: https://img.shields.io/badge/Discord-purple?logo=Discord&label=Chat&color=%235A64EC
