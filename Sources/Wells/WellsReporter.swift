@@ -9,6 +9,7 @@ public enum ReporterError: Error {
 
 public actor WellsReporter {
 	public typealias ReportLocationProvider = @Sendable (String) -> URL?
+	public typealias ExistingLogHandler = @Sendable (URL, Date) -> Void
 
     public static let shared = WellsReporter()
     public static let uploadFileExtension = "wellsdata"
@@ -16,13 +17,13 @@ public actor WellsReporter {
     private static let maximumLogAge: TimeInterval = 2.0 * 24.0 * 60.0 * 60.0
 	public static let defaultRetryInterval = 5 * 60.0
 
-	public var existingLogHandler: @Sendable (URL, Date) -> Void = { _, _ in }
+	public private(set) var existingLogHandler: ExistingLogHandler = { _, _ in }
 
 	public nonisolated let baseURL: URL
     private let logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
 	private let uploader: Uploader
 	private let backgroundIdentifier: String?
-    public var locationProvider: ReportLocationProvider
+    public private(set) var locationProvider: ReportLocationProvider
 
 	public static nonisolated let defaultBackgroundIdentifier: String = {
 		let bundleId = Bundle.main.bundleIdentifier ?? "com.chimehq.Wells"
@@ -79,6 +80,14 @@ public actor WellsReporter {
     private func defaultURL(for identifier: String) -> URL {
         return baseURL.appendingPathComponent(identifier).appendingPathExtension(WellsReporter.uploadFileExtension)
     }
+
+	public func setLocationProvider(_ value: @escaping ReportLocationProvider) {
+		self.locationProvider = value
+	}
+
+	public func setExistingLogHandler(_ value: @escaping ExistingLogHandler) {
+		self.existingLogHandler = value
+	}
 
     private func reportURL(for identifier: String) -> URL? {
 		locationProvider(identifier)
