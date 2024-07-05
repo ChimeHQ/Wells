@@ -18,7 +18,7 @@ public actor WellsReporter {
 
 	public var existingLogHandler: @Sendable (URL, Date) -> Void = { _, _ in }
 
-    public let baseURL: URL
+	public nonisolated let baseURL: URL
     private let logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
 	private let uploader: Uploader
 	private let backgroundIdentifier: String?
