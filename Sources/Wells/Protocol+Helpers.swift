@@ -1,14 +1,5 @@
 import Foundation
 
-extension HTTPURLResponse {
-    var retryAfterInterval: TimeInterval? {
-        return allHeaderFields["Retry-After"]
-            .flatMap({ $0 as? String })
-            .flatMap({ Int($0) })
-            .map({ TimeInterval($0) })
-    }
-}
-
 extension URLRequest {
     var attemptCount: Int {
         get {
@@ -20,7 +11,7 @@ extension URLRequest {
         }
     }
 
-    var uploadIdentifier: WellsUploader.Identifier? {
+    var uploadIdentifier: String? {
         get {
             return allHTTPHeaderFields?["Wells-Upload-Identifier"]
         }

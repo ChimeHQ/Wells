@@ -1,40 +1,79 @@
 import Foundation
 import os.log
 
+import Background
+
 public enum ReporterError: Error {
     case failedToCreateURL
 }
 
-public class WellsReporter {
+public actor WellsReporter {
+	public typealias ReportLocationProvider = @Sendable (String) -> URL?
+
     public static let shared = WellsReporter()
     public static let uploadFileExtension = "wellsdata"
     private static let maximumAccountCount = 5
     private static let maximumLogAge: TimeInterval = 2.0 * 24.0 * 60.0 * 60.0
-    public lazy var existingLogHandler: (URL, Date) -> Void = { url, date in
-        self.handleExistingLog(at: url, date: date)
-    }
+	public static let defaultRetryInterval = 5 * 60.0
+
+	public var existingLogHandler: @Sendable (URL, Date) -> Void = { _, _ in }
 
     public let baseURL: URL
-    private let uploader: WellsUploader
-    private let logger: OSLog
+    private let logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
+	private let uploader: Uploader
+	private let backgroundIdentifier: String?
     public var locationProvider: ReportLocationProvider
 
-    public init(baseURL: URL = defaultDirectory, backgroundIdentifier: String? = WellsUploader.defaultBackgroundIdentifier) {
-        self.logger = OSLog(subsystem: "com.chimehq.Wells", category: "Reporter")
+	public static nonisolated let defaultBackgroundIdentifier: String = {
+		let bundleId = Bundle.main.bundleIdentifier ?? "com.chimehq.Wells"
+
+		return bundleId + ".Uploader"
+	}()
+
+	public init(
+		baseURL: URL = defaultDirectory,
+		backgroundIdentifier: String? = WellsReporter.defaultBackgroundIdentifier,
+		locationProvider: @escaping ReportLocationProvider
+	) {
         self.baseURL = baseURL
-        self.uploader = WellsUploader(backgroundIdentifier: backgroundIdentifier)
-        self.locationProvider = IdentifierExtensionLocationProvider(baseURL: baseURL,
-                                                                    fileExtension: WellsReporter.uploadFileExtension)
+		self.backgroundIdentifier = backgroundIdentifier
+		self.locationProvider = {
+			baseURL.appendingPathComponent($0).appendingPathExtension(WellsReporter.uploadFileExtension)
+		}
 
-        uploader.delegate = self
+		let config: URLSessionConfiguration
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(10), qos: .background) {
-            self.handleExistingLogs()
-        }
+		if let identifier = backgroundIdentifier {
+			config = URLSessionConfiguration.background(withIdentifier: identifier)
+		} else {
+			config = URLSessionConfiguration.default
+		}
+
+		self.uploader = Uploader(
+			sessionConfiguration: config,
+			identifierProvider: { $0.originalRequest?.uploadIdentifier }
+		)
+
+		Task {
+			try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
+
+			await handleExistingLogs()
+		}
     }
 
+	public init(
+		baseURL: URL = defaultDirectory,
+		backgroundIdentifier: String? = WellsReporter.defaultBackgroundIdentifier
+	) {
+		let provider: ReportLocationProvider = {
+			baseURL.appendingPathComponent($0).appendingPathExtension(WellsReporter.uploadFileExtension)
+		}
+
+		self.init(baseURL: baseURL, backgroundIdentifier: backgroundIdentifier, locationProvider: provider)
+	}
+
     public var usingBackgroundUploads: Bool {
-        return uploader.backgroundIdentifier != nil
+        return backgroundIdentifier != nil
     }
 
     private func defaultURL(for identifier: String) -> URL {
@@ -42,7 +81,7 @@ public class WellsReporter {
     }
 
     private func reportURL(for identifier: String) -> URL? {
-        return locationProvider.reportURL(for: identifier)
+		locationProvider(identifier)
     }
 
     public func submit(_ data: Data, uploadRequest: URLRequest) throws {
@@ -65,8 +104,37 @@ public class WellsReporter {
         // embed our header for background tracking
         request.uploadIdentifier = identifier
 
-        uploader.uploadFile(fileURL, using: request)
+		Task<Void, Never> {
+            await uploader.beginUpload(of: fileURL, with: request, identifier: identifier, handler: { _, result in
+				Task<Void, Never> {
+					await self.handleUploadComplete(result, for: identifier, request: uploadRequest)
+				}
+			})
+		}
     }
+
+	private func handleUploadComplete(_ result: Result<URLResponse, Error>, for identifier: String, request: URLRequest) {
+		let networkResponse = NetworkResponse<Void>(with: result)
+
+		switch networkResponse {
+		case .rejected:
+			os_log("Server rejected report submission: %{public}@", log: self.logger, type: .error, identifier)
+
+			removeFile(with: identifier)
+		case let .failed(error):
+			os_log("Failed to submit report: %{public}@ - %{public}@", log: self.logger, type: .error, identifier, String(describing: error))
+
+			removeFile(with: identifier)
+		case let .retry(response):
+			let interval = response.retryAfterInterval ?? Self.defaultRetryInterval
+
+			retrySubmission(of: identifier, after: interval, with: request)
+		case .success:
+			os_log("Submitted report successfully: %{public}@", log: self.logger, type: .error, identifier)
+
+			removeFile(with: identifier)
+		}
+	}
 
     public func createReportDirectoryIfNeeded() throws {
         if FileManager.default.directoryExists(at: baseURL) {
@@ -77,8 +145,10 @@ public class WellsReporter {
     }
 
     func handleExistingLogs() {
-        let urls = try? FileManager.default.contentsOfDirectory(at: baseURL,
-                                                                includingPropertiesForKeys: [.creationDateKey])
+		let urls = try? FileManager.default.contentsOfDirectory(
+			at: baseURL,
+			includingPropertiesForKeys: [.creationDateKey]
+		)
 
         guard let urls = urls else {
             return
@@ -100,7 +170,7 @@ public class WellsReporter {
         }
     }
 
-    private func removeFile(with identifier: WellsUploader.Identifier) {
+    private func removeFile(with identifier: String) {
         guard let fileURL = reportURL(for: identifier) else {
             os_log("Failed to compute URL for %{public}@", log: self.logger, type: .error, identifier)
 
@@ -110,7 +180,7 @@ public class WellsReporter {
         removeFile(at: fileURL)
     }
 
-    private func retrySubmission(of identifier: WellsUploader.Identifier, after interval: TimeInterval, with request: URLRequest) {
+    private func retrySubmission(of identifier: String, after interval: TimeInterval, with request: URLRequest) {
         guard let fileURL = reportURL(for: identifier) else {
             os_log("Failed to compute URL for %{public}@", log: logger, type: .error, identifier)
 
@@ -135,9 +205,11 @@ public class WellsReporter {
 
         newRequest.attemptCount = count + 1
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(delay), qos: .background) {
-            self.submit(fileURL: fileURL, identifier: identifier, uploadRequest: newRequest)
-        }
+		Task {
+			try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+
+			self.submit(fileURL: fileURL, identifier: identifier, uploadRequest: newRequest)
+		}
     }
 
     private func handleExistingLog(at url: URL, date: Date) {
@@ -147,27 +219,6 @@ public class WellsReporter {
 
         os_log("removing old log %{public}@", log: logger, type: .info, url.path)
         removeFile(at: url)
-    }
-}
-
-extension WellsReporter: WellsUploaderDelegate {
-    public func finishedUpload(of identifier: WellsUploader.Identifier, with error: NetworkResponseError?, by uploader: WellsUploader) {
-        switch error {
-        case .transientFailure(let interval, let request):
-            retrySubmission(of: identifier, after: interval, with: request)
-
-            return
-        case nil:
-            os_log("Submitted report successfully: %{public}@", log: self.logger, type: .error, identifier)
-        case let e?:
-            os_log("Failed to submit report: %{public}@ - %{public}@", log: self.logger, type: .error, identifier, String(describing: e))
-        }
-
-        removeFile(with: identifier)
-    }
-
-    public func uploadIdentifier(for request: URLRequest, with uploader: WellsUploader) -> WellsUploader.Identifier? {
-        return request.uploadIdentifier
     }
 }
 
